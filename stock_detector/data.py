@@ -70,14 +70,21 @@ def fetch_history(
     last_err: Exception | None = None
     for attempt in range(retries):
         try:
-            df = yf.download(
-                symbol,
-                period=period,
-                interval=interval,
-                auto_adjust=True,
-                progress=False,
+            # まず Ticker.history（単一銘柄で安定）、失敗時は download にフォールバック。
+            df = (
+                yf.Ticker(symbol).history(period=period, interval=interval, auto_adjust=True)
             )
             df = _normalize(df)
+            if df.empty:
+                df = _normalize(
+                    yf.download(
+                        symbol,
+                        period=period,
+                        interval=interval,
+                        auto_adjust=True,
+                        progress=False,
+                    )
+                )
             if not df.empty:
                 return df
             last_err = ValueError(f"空のデータ: {symbol}")

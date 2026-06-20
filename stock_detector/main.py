@@ -86,6 +86,30 @@ def cmd_demo(args: argparse.Namespace) -> None:
     _print_summary(summary, 20)
 
 
+def cmd_check(args: argparse.Namespace) -> None:
+    """yfinance で実データを1銘柄取得できるか診断する。
+
+    egress 許可リストや疎通の問題を切り分けるための簡易チェック。
+    """
+    from .data import fetch_history, to_yahoo_symbol
+
+    code = args.code
+    symbol = to_yahoo_symbol(code)
+    print(f"接続チェック: {symbol} を取得します ...")
+    try:
+        df = fetch_history(code, period="5d")
+        print(f"✓ 取得成功: {len(df)} 行 / 最新終値 {float(df['Close'].iloc[-1]):.1f}")
+        print(df.tail(2).to_string())
+    except Exception as e:  # noqa: BLE001
+        print(f"✗ 取得失敗: {e}")
+        print(
+            "  ヒント: 'Host not in allowlist' なら環境のネットワーク許可リストに\n"
+            "  query1.finance.yahoo.com / query2.finance.yahoo.com を追加するか、\n"
+            "  ローカル環境で実行してください。"
+        )
+        raise SystemExit(1)
+
+
 def _print_summary(summary: dict[str, Any], horizon: int) -> None:
     if summary.get("n", 0) == 0:
         print("データ不足で集計できませんでした。")
@@ -117,6 +141,10 @@ def main(argv: list[str] | None = None) -> None:
 
     p_demo = sub.add_parser("demo", help="合成データでロジックを確認（通信不要）")
     p_demo.set_defaults(func=cmd_demo)
+
+    p_check = sub.add_parser("check", help="yfinanceで実データ取得できるか診断")
+    p_check.add_argument("--code", default="7203", help="証券コード（既定: 7203）")
+    p_check.set_defaults(func=cmd_check)
 
     args = parser.parse_args(argv)
     args.func(args)
