@@ -1,0 +1,46 @@
+# 株式検知システム 設定ファイル
+# 検知ロジックのパラメータと監視対象銘柄。閾値・重みはバックテストで調整する。
+
+# --- 監視対象（東証の証券コード。.T は自動付与） ---
+watchlist:
+  - "7203"  # トヨタ自動車
+  - "6758"  # ソニーグループ
+  - "9984"  # ソフトバンクグループ
+  - "6861"  # キーエンス
+  - "8035"  # 東京エレクトロン
+  - "6098"  # リクルートHD
+  - "9433"  # KDDI
+  - "8306"  # 三菱UFJ FG
+
+# --- データ取得 ---
+data:
+  period: "1y"     # 取得期間（200日線を使うため1年以上推奨）
+  interval: "1d"   # 日足
+
+# --- 検知ロジックのパラメータ（signals.DEFAULT_CONFIG を上書き） ---
+sma_short: 25
+sma_mid: 75
+sma_long: 200
+trend_window: 60
+regression_window: 40   # ★「滑らかさ」を測る期間
+rsi_window: 14
+roc_window: 20
+breakout_window: 60
+vol_window: 25
+
+# 軸ごとの重み（比率。合計は内部で正規化）
+weights:
+  trend: 0.25        # A トレンド方向
+  smoothness: 0.30   # B 上昇の滑らかさ（最重視）
+  momentum: 0.20     # C 勢い
+  volume: 0.10       # D 出来高
+  timing: 0.15       # E これから上がりそう
+
+# 除外フィルタ（誤検知を減らす）
+filters:
+  rsi_overbought: 78.0
+  max_ext_from_sma_pct: 25.0
+  min_avg_turnover_jpy: 50000000.0   # 平均売買代金の下限（円）
+
+# 検知とみなす合計スコアの下限（0〜100）
+detect_threshold: 60.0
